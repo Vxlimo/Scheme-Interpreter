@@ -156,8 +156,8 @@ scm> (let ([x 1]) (let ([y x] [x 3]) (+ x y)))
 举一个例子
 
 ```
-(letrec 
-    ([fact 
+(letrec
+    ([fact
         (lambda (n)
             (if (= n 0)
                 1
@@ -170,7 +170,7 @@ scm> (let ([x 1]) (let ([y x] [x 3]) (+ x y)))
 ```
 scm> (letrec ([x 1] [y x]) (+ x y))
 RuntimeError // 此处会报错， 你需要思考一下为什么
-scm> (letrec 
+scm> (letrec
         ([fact
             (lambda (n)
                 (if (= n 0)
@@ -294,7 +294,7 @@ scm> (let ([x (lambda (x) x)]) (eq? x (lambda (x) x)))
 ```
 scm> ((lambda (x y) (* x y)) 10 11)
 110
-scm> (let 
+scm> (let
         ([x 1]
         [y 2])
         (let

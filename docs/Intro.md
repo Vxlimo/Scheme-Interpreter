@@ -7,7 +7,7 @@
 
 ## 解释器介绍
 
-在介绍 `src` 前， 我们需要先介绍一下解释器是如何运行的。 
+在介绍 `src` 前， 我们需要先介绍一下解释器是如何运行的。
 
 在 REPL（Read-Evaluate-Print Loop）交互模式下， 用户输入的程序在输入时会被认为是一个完整的字符串， 这个字符串经过 Lexer 处理后分解成一个个的 tokens。 之后， 这些 tokens 会在 Parser 的作用下生成 AST（Abstract Syntax Tree， 抽象语法树）， 最终 AST 被交给求值部分进行求值并输出。
 
@@ -59,7 +59,7 @@ graph LR
 ```
 
 为你需要修改的文件
-- `shared.hpp` 为 SmartPointer 作业中你实现的 `SharedPtr` 
+- `shared.hpp` 为 SmartPointer 作业中你实现的 `SharedPtr`
 > 对， 我们希望你能够使用自己的 `SharedPtr` 而不是 STL 的 `shared_ptr`， 至于为什么要用 `shared_ptr` 你可以思考一下）
 - `parser.cpp` 是你需要实现的 Parser 部分， 你需要填写所有的 `parse()` 函数
 - `evaluation.cpp` 是你需要实现的 Evaluation 部分， 你需要填写所有的 `eval()` 函数

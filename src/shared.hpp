@@ -1,84 +1,110 @@
-#ifndef SHARED_PTR
-#define SHARED_PTR
-#include <iostream>
+#ifndef UNIQUE_PTR
+#define UNIQUE_PTR
+
+#include <functional>
 
 template <typename T>
-class SharedPtr
-{
-private:
-/*
-    @attr ptr(pointer to T): a pointer to the given position
-    @attr count(pointer to int): the number of instances pointing to a same place
-*/
-    T *ptr;
-    int *count;
+class SharedPtr {
 public:
-    // default constructor
-    SharedPtr() : ptr(nullptr), count(nullptr) {}
-
-    // constructor
-    explicit SharedPtr(T *pointer) : ptr(pointer) 
+    SharedPtr()
     {
-        if (pointer) count = new int, *count = 1;
-        else count = nullptr;
+        ptr = nullptr;
+        count = nullptr;
+        return;
     }
-
-    // copy constructors
-    SharedPtr(const SharedPtr &other) : ptr(other.ptr), count(other.count)
+    explicit SharedPtr(T* pointer)
     {
-        if(this == &other) return;
-        if (count) (*count)++;
+        ptr = pointer;
+        if (ptr != nullptr)
+            count = new size_t(1);
+        return;
     }
-    
-    // operator =
-    SharedPtr& operator = (const SharedPtr &other)
+    ~SharedPtr()
     {
-        if (this == &other) return *this;
-        this -> reset();
-        ptr = other.ptr, count = other.count;
-        if (count) (*count)++;
-        return *this;
+        del();
+        return;
     }
-
-    int use_count() { return count ? *count : 0; }
-    T* get() const { return ptr; }
-
-    // operator * and operator ->
-    T* operator -> () { return ptr; }
-    T& operator * () { return *ptr; }
-
-    // operator bool
-    operator bool() const { return ptr; }
-
-    // reset()
-    void reset()
+    void del()
     {
-        if (ptr)
-        {
-            if (*count > 1)
-                (*count)--;
-            else
-            {
+        if (ptr != nullptr) {
+            (*count)--;
+            if (*count == 0) {
                 delete ptr;
                 delete count;
             }
-            ptr = nullptr, count = nullptr;
+            ptr = nullptr;
+            count = nullptr;
         }
+        return;
     }
-    void reset(T* pointer)
+
+    SharedPtr(const SharedPtr& other)
     {
-        if (ptr == pointer) return;
-        reset();
-        ptr = pointer;
-        if (pointer) count = new int, *count = 1;
+        ptr = other.ptr;
+        count = other.count;
+        if (ptr != nullptr)
+            (*count)++;
+        return;
     }
-    // deconstructor
-    ~SharedPtr() { reset(); }
+    SharedPtr& operator=(const SharedPtr& other)
+    {
+        if (ptr != other.ptr) {
+            del();
+            ptr = other.ptr;
+            count = other.count;
+            if (ptr != nullptr)
+                (*count)++;
+        }
+        return *this;
+    }
+
+    operator bool() const
+    {
+        return ptr;
+    }
+    size_t use_count() const
+    {
+        if (count == nullptr)
+            return 0;
+        return *count;
+    }
+    T* get() const
+    {
+        return ptr;
+    }
+    T& operator*() const
+    {
+        return *ptr;
+    }
+    T* operator->() const
+    {
+        return ptr;
+    }
+    void reset()
+    {
+        del();
+        return;
+    }
+    void reset(T* new_pointer)
+    {
+        if (ptr != new_pointer) {
+            del();
+            ptr = new_pointer;
+            if (ptr != nullptr)
+                count = new size_t(1);
+        }
+        return;
+    }
+
+private:
+    T* ptr;
+    size_t* count;
 };
 
-template <typename T, typename ... Args>
-SharedPtr<T> make_shared(Args&&... args)
+template <typename T, typename... argv>
+SharedPtr<T> make_shared(argv&&... val)
 {
-    return SharedPtr(new T(std :: forward<Args>(args) ...));
+    return SharedPtr<T>(new T(std::forward<argv>(val)...));
 }
-#endif
+
+#endif // SHARED_PTR
