@@ -85,6 +85,11 @@ void Null::showCdr(std::ostream& os)
     os << ')';
 }
 
+void Nothing::show(std::ostream& os)
+{
+    os << "#<nothing>";
+}
+
 void Terminate::show(std::ostream& os)
 {
     os << "()";
@@ -166,6 +171,15 @@ Null::Null()
 Value NullV()
 {
     return Value(new Null());
+}
+
+Nothing::Nothing()
+    : ValueBase(V_NOTHING)
+{
+}
+Value NothingV()
+{
+    return Value(new Nothing());
 }
 
 Terminate::Terminate()

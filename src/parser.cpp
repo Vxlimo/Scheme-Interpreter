@@ -72,11 +72,6 @@ Expr List ::parse(Assoc& env)
     Expr func = stxs[0].parse(env);
     /* func is E_... if and only if it is Exprbase */
     if (typeid(*func) != typeid(GetType)) {
-        /* check whether the args is matched */
-        Lambda* lambda = dynamic_cast<Lambda*>(func.get());
-        if (stxs.size() != lambda->x.size() + 1)
-            throw RuntimeError("wrong number of args.");
-
         Expr rator = func;
         std::vector<Expr> rand;
         for (int i = 1; i < stxs.size(); i++) {
@@ -109,7 +104,7 @@ Expr List ::parse(Assoc& env)
             Identifier* name = dynamic_cast<Identifier*>(assign->stxs[0].get());
             if (name == nullptr)
                 throw RuntimeError("let: args[2] have some var name invalid.");
-            env1 = extend(name->s, Value(nullptr), env1);
+            env1 = extend(name->s, Value(NothingV()), env1);
             bind.push_back(std::make_pair(name->s, assign->stxs[1].parse(env)));
         }
 
@@ -120,12 +115,12 @@ Expr List ::parse(Assoc& env)
     /* lambda, ex: (lambda (var*) expr) */
     case E_LAMBDA: {
         if (stxs.size() != 3)
-            throw RuntimeError("let: wrong number of args.");
+            throw RuntimeError("lambda: wrong number of args.");
 
         /* get var list */
         List* vars = dynamic_cast<List*>(stxs[1].get());
         if (vars == nullptr)
-            throw RuntimeError("let: args[1] is not a list.");
+            throw RuntimeError("lambda: args[1] is not a list.");
 
         /* the body is based on new assoc env1 */
         Assoc env1 = env;
@@ -135,8 +130,8 @@ Expr List ::parse(Assoc& env)
         for (Syntax stx : vars->stxs) {
             Identifier* name = dynamic_cast<Identifier*>(stx.get());
             if (name == nullptr)
-                throw RuntimeError("let: args[2] have some var name invalid.");
-            env1 = extend(name->s, Value(nullptr), env1);
+                throw RuntimeError("lambda: args[2] have some var name invalid.");
+            env1 = extend(name->s, Value(NothingV()), env1);
             x.push_back(name->s);
         }
 
@@ -153,12 +148,12 @@ Expr List ::parse(Assoc& env)
     /* letrec, ex: (letrec ([var expr]*) expr) */
     case E_LETREC: {
         if (stxs.size() != 3)
-            throw RuntimeError("let: wrong number of args.");
+            throw RuntimeError("letrec: wrong number of args.");
 
         /* get var list */
         List* vars = dynamic_cast<List*>(stxs[1].get());
         if (vars == nullptr)
-            throw RuntimeError("let: args[1] is not a list.");
+            throw RuntimeError("letrec: args[1] is not a list.");
 
         /* the body is based on new assoc env1, this time add vars first */
         Assoc env1 = env;
@@ -168,11 +163,11 @@ Expr List ::parse(Assoc& env)
         for (Syntax stx : vars->stxs) {
             List* assign = dynamic_cast<List*>(stx.get());
             if (assign == nullptr)
-                throw RuntimeError("let: args[2] have something not a list.");
+                throw RuntimeError("letrec: args[2] have something not a list.");
             Identifier* name = dynamic_cast<Identifier*>(assign->stxs[0].get());
             if (name == nullptr)
-                throw RuntimeError("let: args[2] have some var name invalid.");
-            env1 = extend(name->s, Value(nullptr), env1);
+                throw RuntimeError("letrec: args[2] have some var name invalid.");
+            env1 = extend(name->s, Value(NothingV()), env1);
             bind.push_back(std::make_pair(name->s, Expr(nullptr)));
         }
 

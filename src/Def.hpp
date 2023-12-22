@@ -59,7 +59,8 @@ enum ValueType {
     V_PROC,
     V_VOID,
     V_PRIMITIVE,
-    V_TERMINATE
+    V_TERMINATE,
+    V_NOTHING
 };
 
 void initPrimitives();

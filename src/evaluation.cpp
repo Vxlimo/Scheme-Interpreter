@@ -75,7 +75,7 @@ Value Letrec::eval(Assoc& env)
     /* add definition */
     Assoc env1 = env;
     for (auto expr : bind)
-        env1 = extend(expr.first, Value(nullptr), env1);
+        env1 = extend(expr.first, Value(NothingV()), env1);
 
     /* pre-calculate all value */
     std::vector<Value> vs;
@@ -137,7 +137,7 @@ Value False::eval(Assoc& env)
 /* begin expression */
 Value Begin::eval(Assoc& env)
 {
-    Value v = NullV();
+    Value v = NothingV();
     for (Expr expr : es) {
         Assoc env1 = env;
         v = expr->eval(env1);
@@ -152,7 +152,7 @@ Value Quote_Singlevalue(Syntax, Assoc&);
 Value Quote_List(std::vector<Syntax>& stxs, int pos, Assoc& env)
 {
     if (pos == stxs.size())
-        return NullV();
+        return NothingV();
     return PairV(Quote_Singlevalue(stxs[pos], env), Quote_List(stxs, pos + 1, env));
 }
 Value Quote_Singlevalue(Syntax s, Assoc& env)

@@ -74,6 +74,12 @@ struct Null : ValueBase {
 };
 Value NullV();
 
+struct Nothing : ValueBase {
+    Nothing();
+    virtual void show(std::ostream&) override;
+};
+Value NothingV();
+
 struct Terminate : ValueBase {
     Terminate();
     virtual void show(std::ostream&) override;
