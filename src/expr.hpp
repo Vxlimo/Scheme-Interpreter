@@ -15,6 +15,12 @@ struct ExprBase {
     virtual ~ExprBase() = default;
 };
 
+struct GetType : ExprBase {
+    Expr e;
+    GetType(ExprType);
+    virtual Value eval(Assoc&) override;
+};
+
 struct Expr {
     SharedPtr<ExprBase> ptr;
     Expr(ExprBase*);
