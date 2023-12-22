@@ -10,8 +10,32 @@
 extern std ::map<std ::string, ExprType> primitives;
 extern std ::map<std ::string, ExprType> reserved_words;
 
+/* function with out list */
+Value GetType::eval(Assoc& env)
+{
+    throw RuntimeError("syntax error.");
+    return Value(nullptr);
+}
+
 /* let expression */
-Value Let::eval(Assoc& env) { }
+Value Let::eval(Assoc& env)
+{
+    /* pre-calculate all value */
+    std::vector<Value> vs;
+    for (auto expr : bind) {
+        Assoc env1 = env;
+        vs.push_back(expr.second->eval(env1));
+    }
+
+    /* assignment */
+    Assoc env1 = env;
+    for (int i = 0; i < bind.size(); i++) {
+        auto expr = bind[i];
+        env1 = extend(expr.first, vs[i], env1);
+    }
+
+    return body->eval(env1);
+}
 
 /* lambda expression */
 Value Lambda::eval(Assoc& env)
@@ -20,15 +44,60 @@ Value Lambda::eval(Assoc& env)
 }
 
 /* for function calling */
-Value Apply::eval(Assoc& e) { }
+Value Apply::eval(Assoc& env)
+{
+    /* find closure */
+    Assoc env1 = env;
+    Value rator_eval = rator->eval(env1);
+    Closure* closure = dynamic_cast<Closure*>(rator_eval.get());
+    if (closure == nullptr)
+        throw RuntimeError("apply: type error.");
+    if (closure->parameters.size() != rand.size())
+        throw RuntimeError("apply: wrong number of args.");
+
+    /* pre-calculate parameters */
+    std::vector<Value> vs;
+    for (auto expr : rand) {
+        Assoc env2 = env;
+        vs.push_back(expr->eval(env2));
+    }
+
+    /* apply the closure */
+    Assoc env2 = closure->env;
+    for (int i = 0; i < closure->parameters.size(); i++)
+        env2 = extend(closure->parameters[i], vs[i], env2);
+    return closure->e->eval(env2);
+}
 
 /* letrec expression */
-Value Letrec::eval(Assoc& env) { }
+Value Letrec::eval(Assoc& env)
+{
+    /* add definition */
+    Assoc env1 = env;
+    for (auto expr : bind)
+        env1 = extend(expr.first, Value(nullptr), env1);
+
+    /* pre-calculate all value */
+    std::vector<Value> vs;
+    for (auto expr : bind) {
+        Assoc env2 = env1;
+        vs.push_back(expr.second->eval(env2));
+    }
+
+    /* assignment */
+    Assoc env2 = env1;
+    for (int i = 0; i < bind.size(); i++) {
+        auto expr = bind[i];
+        modify(expr.first, vs[i], env2);
+    }
+
+    return body->eval(env2);
+}
 
 /* evaluation of variable */
-Value Var::eval(Assoc& e)
+Value Var::eval(Assoc& env)
 {
-    Value v = find(x, e);
+    Value v = find(x, env);
     if (v.get() != nullptr)
         return v;
     else
@@ -36,73 +105,111 @@ Value Var::eval(Assoc& e)
 }
 
 /* evaluation of a fixnum */
-Value Fixnum::eval(Assoc& e)
+Value Fixnum::eval(Assoc& env)
 {
     return IntegerV(n);
 }
 
 /* if expression */
-Value If::eval(Assoc& e)
+Value If::eval(Assoc& env)
 {
-    Assoc e1 = e, e2 = e;
-    Boolean* bool1 = dynamic_cast<Boolean*>(cond->eval(e1).get());
-    if (bool1 != nullptr && bool1->b == true)
-        return conseq->eval(e2);
+    Assoc env1 = env, env2 = env;
+    Value cond_eval = cond->eval(env1);
+    Boolean* bool1 = dynamic_cast<Boolean*>(cond_eval.get());
+    if (bool1 == nullptr || bool1->b == true)
+        return conseq->eval(env2);
     else
-        return alter->eval(e2);
+        return alter->eval(env2);
 }
 
 /* evaluation of #t */
-Value True::eval(Assoc& e)
+Value True::eval(Assoc& env)
 {
     return BooleanV(true);
 }
 
 /* evaluation of #f */
-Value False::eval(Assoc& e)
+Value False::eval(Assoc& env)
 {
     return BooleanV(false);
 }
 
 /* begin expression */
-Value Begin::eval(Assoc& e)
+Value Begin::eval(Assoc& env)
 {
     Value v = NullV();
     for (Expr expr : es) {
-        Assoc e1 = e;
-        v = expr->eval(e1);
+        Assoc env1 = env;
+        v = expr->eval(env1);
     }
     return v;
 }
 
 /* quote expression */
-Value Quote::eval(Assoc& e) { }
+Value Quote_List(std::vector<Syntax>&, int, Assoc&);
+Value Quote_Singlevalue(Syntax, Assoc&);
+
+Value Quote_List(std::vector<Syntax>& stxs, int pos, Assoc& env)
+{
+    if (pos == stxs.size())
+        return NullV();
+    return PairV(Quote_Singlevalue(stxs[pos], env), Quote_List(stxs, pos + 1, env));
+}
+Value Quote_Singlevalue(Syntax s, Assoc& env)
+{
+    /* a list need to be reconstructed in to pair */
+    List* list = dynamic_cast<List*>(s.get());
+    if (list != nullptr)
+        return Quote_List(list->stxs, 0, env);
+
+    /* otherwise, output directly */
+    Number* int1 = dynamic_cast<Number*>(s.get());
+    if (int1 != nullptr)
+        return IntegerV(int1->n);
+    TrueSyntax* bool1 = dynamic_cast<TrueSyntax*>(s.get());
+    if (bool1 != nullptr)
+        return BooleanV(true);
+    FalseSyntax* bool2 = dynamic_cast<FalseSyntax*>(s.get());
+    if (bool2 != nullptr)
+        return BooleanV(false);
+    Identifier* id = dynamic_cast<Identifier*>(s.get());
+    if (id != nullptr)
+        return SymbolV(id->s);
+
+    throw RuntimeError("quote: type error.");
+    return Value(nullptr);
+}
+Value Quote::eval(Assoc& env)
+{
+    Assoc env1 = env;
+    return Quote_Singlevalue(s, env1);
+}
 
 /* (void) */
-Value MakeVoid::eval(Assoc& e)
+Value MakeVoid::eval(Assoc& env)
 {
     return VoidV();
 }
 
 /* (exit) */
-Value Exit::eval(Assoc& e)
+Value Exit::eval(Assoc& env)
 {
     exit(0);
-    return;
+    return Value(nullptr);
 }
 
 /* evaluation of two-operators primitive */
-Value Binary::eval(Assoc& e)
+Value Binary::eval(Assoc& env)
 {
-    Assoc e1 = e;
-    return evalRator(rand1->eval(e1), rand2->eval(e1));
+    Assoc env1 = env;
+    return evalRator(rand1->eval(env1), rand2->eval(env1));
 }
 
 /* evaluation of single-operator primitive */
-Value Unary::eval(Assoc& e)
+Value Unary::eval(Assoc& env)
 {
-    Assoc e1 = e;
-    return evalRator(rand->eval(e1));
+    Assoc env1 = env;
+    return evalRator(rand->eval(env1));
 }
 
 /* * */
@@ -250,7 +357,7 @@ Value IsSymbol::evalRator(const Value& rand)
 /* null? */
 Value IsNull::evalRator(const Value& rand)
 {
-    return BooleanV(rand->v_type == V_VOID);
+    return BooleanV(rand->v_type == V_NULL);
 }
 
 /* pair? */

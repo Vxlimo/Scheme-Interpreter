@@ -11,6 +11,11 @@ ExprBase ::ExprBase(ExprType et)
 {
 }
 
+GetType::GetType(ExprType et)
+    : ExprBase(et)
+{
+}
+
 Expr ::Expr(ExprBase* eb)
     : ptr(eb)
 {

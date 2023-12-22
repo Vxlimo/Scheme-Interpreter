@@ -19,6 +19,11 @@ using std ::vector;
 extern std ::map<std ::string, ExprType> primitives;
 extern std ::map<std ::string, ExprType> reserved_words;
 
+Expr Syntax::parse(Assoc& env)
+{
+    return ptr->parse(env);
+}
+
 /* fixnum, ex: 5 */
 Expr Number ::parse(Assoc& env)
 {
@@ -39,8 +44,9 @@ Expr Identifier ::parse(Assoc& env)
         return Expr(new GetType(primitives[s]));
     if (reserved_words.find(this->s) != reserved_words.end())
         return Expr(new GetType(reserved_words[s]));
-    else
-        throw RuntimeError(this->s + ": undefined");
+
+    /* a new function or variable */
+    return Expr(new Var(s));
 }
 
 /* true, ex: #t */
@@ -65,7 +71,7 @@ Expr List ::parse(Assoc& env)
 
     Expr func = stxs[0].parse(env);
     /* func is E_... if and only if it is Exprbase */
-    if (typeid(func) != typeid(ExprBase)) {
+    if (typeid(*func) != typeid(GetType)) {
         /* check whether the args is matched */
         Lambda* lambda = dynamic_cast<Lambda*>(func.get());
         if (stxs.size() != lambda->x.size() + 1)
@@ -178,7 +184,7 @@ Expr List ::parse(Assoc& env)
         }
 
         Expr body = stxs[2].parse(env1);
-        return Expr(new Let(bind, body));
+        return Expr(new Letrec(bind, body));
     }
 
     /* never appeared */
@@ -245,7 +251,7 @@ Expr List ::parse(Assoc& env)
     /* mul, ex: (* a b) */
     case E_MUL: {
         if (stxs.size() != 3)
-            throw RuntimeError("*: wrng number of args.");
+            throw RuntimeError("*: wrong number of args.");
 
         Assoc env1 = env, env2 = env;
         return Expr(new Mult(stxs[1].parse(env1), stxs[2].parse(env2)));

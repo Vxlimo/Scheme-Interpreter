@@ -16,7 +16,6 @@ struct ExprBase {
 };
 
 struct GetType : ExprBase {
-    Expr e;
     GetType(ExprType);
     virtual Value eval(Assoc&) override;
 };
