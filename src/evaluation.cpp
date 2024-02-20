@@ -152,7 +152,7 @@ Value Quote_Singlevalue(Syntax, Assoc&);
 Value Quote_List(std::vector<Syntax>& stxs, int pos, Assoc& env)
 {
     if (pos == stxs.size())
-        return NothingV();
+        return NullV();
     return PairV(Quote_Singlevalue(stxs[pos], env), Quote_List(stxs, pos + 1, env));
 }
 Value Quote_Singlevalue(Syntax s, Assoc& env)
